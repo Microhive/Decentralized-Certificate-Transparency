@@ -1,68 +1,88 @@
 pragma solidity ^0.4.11;
 contract EiMa {
 
-    mapping(bytes32 => Cert) certs;
+    mapping(bytes32 => Certificate) certificates;
     
     function EiMa() public {
         
     }
 
     /// Add a new certificate to chain.
-    function addCertificate(string url) public {
+    function addCertificate(string url) public returns (bool _allowed) {
         bytes32 hashedInput = keccak256(url);
-        Cert certi = new Cert(url);
-        certs[hashedInput] = certi;
-        //if(!cert.exist()) {
-        //    cert.getOwner = msg.sender;
-        //    certs[hashedInput] = cert;
-            
-        //    return;
-        //}
-        //if(certs[hashedInput].owner != msg.sender) return;
-        
-        //Certificate memory curCert = cert.newer;
-        //while(!curCert.newest) {
-        //    curCert = getCertificate(curCert.newer);
-        //}
-        //curCert.newest = false;
-        //curCert.newer = cert.url;
+        Certificate oldCert = certificates[hashedInput];
+        Certificate newCert = new Certificate(url, msg.sender);
+        if(address(oldCert) == 0x0) {
+            certificates[hashedInput] = newCert;
+            return true;
+        }
+        else {
+            while(!oldCert.isNewest()) oldCert = oldCert.getNextCert(); //Linked list loop
+            if(oldCert.getOwner() == msg.sender)
+                return oldCert.addCertificate(newCert);
+            else
+                return false;
+        }
     }
     
-    function getCertificate(string url) public view returns (Cert) {
+    function getCertificate(string url) public view returns (Certificate _cert) {
         bytes32 hashedInput = keccak256(url);
-        return certs[hashedInput];
+        Certificate curCert = certificates[hashedInput];
+        while(address(curCert) != 0x0 && !curCert.isNewest()) {
+            curCert = curCert.getNextCert();
+        }
+        return curCert;
     }
     
-    //function transferOwnership(Certificate cert, address newOwner) public {
-    //    if(msg.sender != cert.owner) return;
-    //    cert.owner = msg.sender;
-    //}
+    function transferOwnership(Certificate cert, address newOwner) public returns (bool _allowed) {
+        if(msg.sender != cert.getOwner()) return false;
+        cert.transferOwnership(newOwner);
+        return true;
+    }
     
     //function newCert(bytes32 certUrl) public returns (Certificate cert) { 
     //    cert = Certificate({url:certUrl, owner:msg.sender, newest:true, exist:true, newer:0});
     //}
 }
 
-contract Cert {
+contract Certificate {
     address owner;
     bytes32 urlHash;
     //bytes32 certHash; //For later use.
-    bool exist;
-    bool newest;
-    address newerCert;
+    bool newest = true;
+    Certificate newerCert;
     
-    function Cert(string url) public {
-        owner = msg.sender;
+    function Certificate(string url, address _owner) public payable {
+        owner = _owner;
         urlHash = keccak256(url);
-        exist = true;
-        newest = true;
     }
     
-    function isExisting() public view returns (bool) {
-        return exist;
-    }
-    
-    function getCertHash() public view returns (bytes32) {
+    function getCertHash() public view returns (bytes32 _urlHash) {
         return urlHash;
+    }
+    
+    function getOwner() public view returns (address _owner) {
+        return owner;
+    }
+    
+    function isNewest() public view returns (bool _newest) {
+        return newest;
+    }
+    
+    function getNextCert() public view returns (Certificate _newerCert) {
+        return newerCert;
+    }
+    
+    function transferOwnership(address _newOwner) public {
+        owner = _newOwner;
+    }
+    
+    function addCertificate(Certificate _certificate) public returns (bool _allowed) {
+        if(address(newerCert) == 0x0 && _certificate != this) {
+            newest = false;
+            newerCert = _certificate;
+            return true;
+        }
+        return false;
     }
 }
