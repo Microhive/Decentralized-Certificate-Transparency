@@ -2,36 +2,28 @@ pragma solidity ^0.4.11;
 contract EiMa {
 
     mapping(bytes32 => Certificate) certificates;
-    
-    function EiMa() public {
-        
-    }
 
     /// Add a new certificate to chain.
     function addCertificate(string url) public returns (bool _allowed) {
         bytes32 hashedInput = keccak256(url);
         Certificate oldCert = certificates[hashedInput];
-        Certificate newCert = new Certificate(url, msg.sender);
+        Certificate newCert = new Certificate(url, msg.sender, oldCert);
         if(address(oldCert) == 0x0) {
             certificates[hashedInput] = newCert;
             return true;
         }
         else {
-            while(!oldCert.isNewest()) oldCert = oldCert.getNextCert(); //Linked list loop
-            if(oldCert.getOwner() == msg.sender)
-                return oldCert.addCertificate(newCert);
-            else
-                return false;
+            if(oldCert.getOwner() == msg.sender) {
+                certificates[hashedInput] = newCert;
+                return true;
+            }
+            return false;
         }
     }
     
-    function getCertificate(string url) public view returns (Certificate _cert) {
+    function getCertificate(string url) public view returns (Certificate) {
         bytes32 hashedInput = keccak256(url);
-        Certificate curCert = certificates[hashedInput];
-        while(address(curCert) != 0x0 && !curCert.isNewest()) {
-            curCert = curCert.getNextCert();
-        }
-        return curCert;
+        return certificates[hashedInput];
     }
     
     function transferOwnership(Certificate cert, address newOwner) public returns (bool _allowed) {
@@ -49,12 +41,12 @@ contract Certificate {
     address owner;
     bytes32 urlHash;
     //bytes32 certHash; //For later use.
-    bool newest = true;
-    Certificate newerCert;
+    Certificate prevCert;
     
-    function Certificate(string url, address _owner) public payable {
+    function Certificate(string url, address _owner, Certificate _prevCert) public payable {
         owner = _owner;
         urlHash = keccak256(url);
+        prevCert = _prevCert;
     }
     
     function getCertHash() public view returns (bytes32 _urlHash) {
@@ -65,24 +57,11 @@ contract Certificate {
         return owner;
     }
     
-    function isNewest() public view returns (bool _newest) {
-        return newest;
-    }
-    
-    function getNextCert() public view returns (Certificate _newerCert) {
-        return newerCert;
+    function getPrevCert() public view returns (Certificate _prevCert) {
+        return prevCert;
     }
     
     function transferOwnership(address _newOwner) public {
         owner = _newOwner;
-    }
-    
-    function addCertificate(Certificate _certificate) public returns (bool _allowed) {
-        if(address(newerCert) == 0x0 && _certificate != this) {
-            newest = false;
-            newerCert = _certificate;
-            return true;
-        }
-        return false;
     }
 }
