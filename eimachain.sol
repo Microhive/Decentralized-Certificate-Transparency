@@ -1,29 +1,43 @@
 pragma solidity ^0.4.11;
 contract EiMa {
+    //mapping(bytes32 => Certificate) localStore;
+    Certificate[] certificates;
+    
+    function EiMa() public {
+    }
 
-    mapping(bytes32 => Certificate) certificates;
-
-    /// Add a new certificate to chain.
+    // Add a new certificate to chain.
     function addCertificate(string url) public returns (bool _allowed) {
-        bytes32 hashedInput = keccak256(url);
-        Certificate oldCert = certificates[hashedInput];
-        Certificate newCert = new Certificate(url, msg.sender, oldCert);
-        if(address(oldCert) == 0x0) {
-            certificates[hashedInput] = newCert;
+        //bytes32 hashedInput = keccak256(url);
+        bool oldCertFound;
+        uint256 oldCertId;
+        Certificate oldCert;
+        Certificate newCert;
+        (oldCertFound, oldCertId, oldCert) = getCertificate(url);
+        
+        if(!oldCertFound) {
+            newCert = new Certificate(url, msg.sender, Certificate(0x0));
+            //localStore[hashedInput] = newCert;
+            certificates.push(newCert);
             return true;
         }
         else {
-            if(oldCert.getOwner() == msg.sender) {
-                certificates[hashedInput] = newCert;
-                return true;
-            }
-            return false;
+            newCert = new Certificate(url, msg.sender, oldCert);
+            certificates[oldCertId] = newCert;
+            //localStore[hashedInput] = newCert;
         }
     }
     
-    function getCertificate(string url) public view returns (Certificate) {
+    function getCertificate(string url) public view returns (bool, uint256, Certificate) {
         bytes32 hashedInput = keccak256(url);
-        return certificates[hashedInput];
+        //if(localStore[hashedInput] != address(0)) return (true, uint256(0), localStore[hashedInput]);
+        for(uint256 i = 0; i < certificates.length; i++) {
+            if(certificates[i] != address(0) && certificates[i].getUrlHash() == hashedInput) {
+                //localStore[hashedInput] = curCert;
+                return (true, i, certificates[i]);
+            }
+        }
+        return (false, 0, Certificate(0));
     }
     
     function transferOwnership(Certificate cert, address newOwner) public returns (bool _allowed) {
@@ -31,10 +45,7 @@ contract EiMa {
         cert.transferOwnership(newOwner);
         return true;
     }
-    
-    //function newCert(bytes32 certUrl) public returns (Certificate cert) { 
-    //    cert = Certificate({url:certUrl, owner:msg.sender, newest:true, exist:true, newer:0});
-    //}
+
 }
 
 contract Certificate {
@@ -49,7 +60,7 @@ contract Certificate {
         prevCert = _prevCert;
     }
     
-    function getCertHash() public view returns (bytes32 _urlHash) {
+    function getUrlHash() public view returns (bytes32 _urlHash) {
         return urlHash;
     }
     
