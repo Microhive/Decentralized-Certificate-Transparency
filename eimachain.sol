@@ -3,7 +3,7 @@ contract EiMa {
     Certificate[] certificates;
 
     // Add a new certificate to chain.
-    function addCertificate(string url) public returns (bool _allowed) { //, bytes32 _certSHA2
+    function addCertificate(string url, bytes32 _certSHA2) public returns (bool _allowed) {
         bool oldCertFound;
         uint256 oldCertId;
         Certificate oldCert;
@@ -11,12 +11,12 @@ contract EiMa {
         (oldCertFound, oldCertId, oldCert) = getCertificate(url);
         
         if(!oldCertFound) {
-            newCert = new Certificate(url, msg.sender, Certificate(0x0)); //_certSHA2,
+            newCert = new Certificate(url, _certSHA2, msg.sender, Certificate(0x0));
             certificates.push(newCert);
             return true;
         }
         else {
-            newCert = new Certificate(url, msg.sender, oldCert); //_certSHA2,
+            newCert = new Certificate(url, _certSHA2, msg.sender, oldCert);
             certificates[oldCertId] = newCert;
         }
     }
@@ -41,13 +41,13 @@ contract EiMa {
 
 contract Certificate {
     address owner;
-    //bytes32 certSHA2;
+    bytes32 certSHA2;
     bytes32 urlHash;
     Certificate prevCert;
     
-    function Certificate(string url, address _owner, Certificate _prevCert) public payable {
+    function Certificate(string url, bytes32 _certSHA2, address _owner, Certificate _prevCert) public payable {
         owner = _owner;
-        //certSHA2 = _certSHA2; //bytes32 _certSHA2,
+        certSHA2 = _certSHA2;
         urlHash = keccak256(url);
         prevCert = _prevCert;
     }
