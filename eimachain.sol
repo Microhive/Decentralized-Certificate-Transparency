@@ -1,14 +1,9 @@
 pragma solidity ^0.4.11;
 contract EiMa {
-    //mapping(bytes32 => Certificate) localStore;
     Certificate[] certificates;
-    
-    function EiMa() public {
-    }
 
     // Add a new certificate to chain.
-    function addCertificate(string url) public returns (bool _allowed) {
-        //bytes32 hashedInput = keccak256(url);
+    function addCertificate(string url) public returns (bool _allowed) { //, bytes32 _certSHA2
         bool oldCertFound;
         uint256 oldCertId;
         Certificate oldCert;
@@ -16,24 +11,20 @@ contract EiMa {
         (oldCertFound, oldCertId, oldCert) = getCertificate(url);
         
         if(!oldCertFound) {
-            newCert = new Certificate(url, msg.sender, Certificate(0x0));
-            //localStore[hashedInput] = newCert;
+            newCert = new Certificate(url, msg.sender, Certificate(0x0)); //_certSHA2,
             certificates.push(newCert);
             return true;
         }
         else {
-            newCert = new Certificate(url, msg.sender, oldCert);
+            newCert = new Certificate(url, msg.sender, oldCert); //_certSHA2,
             certificates[oldCertId] = newCert;
-            //localStore[hashedInput] = newCert;
         }
     }
     
     function getCertificate(string url) public view returns (bool, uint256, Certificate) {
         bytes32 hashedInput = keccak256(url);
-        //if(localStore[hashedInput] != address(0)) return (true, uint256(0), localStore[hashedInput]);
         for(uint256 i = 0; i < certificates.length; i++) {
             if(certificates[i] != address(0) && certificates[i].getUrlHash() == hashedInput) {
-                //localStore[hashedInput] = curCert;
                 return (true, i, certificates[i]);
             }
         }
@@ -50,12 +41,13 @@ contract EiMa {
 
 contract Certificate {
     address owner;
+    //bytes32 certSHA2;
     bytes32 urlHash;
-    //bytes32 certHash; //For later use.
     Certificate prevCert;
     
     function Certificate(string url, address _owner, Certificate _prevCert) public payable {
         owner = _owner;
+        //certSHA2 = _certSHA2; //bytes32 _certSHA2,
         urlHash = keccak256(url);
         prevCert = _prevCert;
     }
@@ -73,6 +65,6 @@ contract Certificate {
     }
     
     function transferOwnership(address _newOwner) public {
-        owner = _newOwner;
+        if(msg.sender == owner) owner = _newOwner;
     }
 }
