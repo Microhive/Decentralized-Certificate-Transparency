@@ -14,14 +14,17 @@ contract EiMaChain {
     /// Add a new certificate to chain.
     function addCertificate(string url) public returns (bool _allowed) {
         bytes32 hashedInput = keccak256(url);
+        uint256 index;
         Certificate oldCert = certificates[pointers[hashedInput]];
 
         if (pointers[hashedInput] == 0) {
-            pointers[hashedInput] = certificates.push(new Certificate(url, msg.sender, Certificate(0x0)));
+            index = certificates.push(new Certificate(url, msg.sender, certificates[0])) - 1;
+            pointers[hashedInput] = index;
             return true;
         } else {
             if (oldCert.getOwner() == msg.sender) {
-                certificates[pointers[hashedInput]] = new Certificate(url, msg.sender, oldCert);
+                index = pointers[hashedInput];
+                certificates[index] = new Certificate(url, msg.sender, oldCert);
                 return true;
             }
         }
