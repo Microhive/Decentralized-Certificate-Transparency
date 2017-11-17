@@ -1,5 +1,8 @@
-pragma solidity ^0.4.11;
-contract EiMa {
+pragma solidity ^0.4.18;
+
+import "./Certificate.sol";
+
+contract EiMaChain {
 
     mapping(bytes32 => Certificate) certificates;
 
@@ -8,12 +11,11 @@ contract EiMa {
         bytes32 hashedInput = keccak256(url);
         Certificate oldCert = certificates[hashedInput];
         Certificate newCert = new Certificate(url, msg.sender, oldCert);
-        if(address(oldCert) == 0x0) {
+        if (address(oldCert) == 0x0) {
             certificates[hashedInput] = newCert;
             return true;
-        }
-        else {
-            if(oldCert.getOwner() == msg.sender) {
+        } else {
+            if (oldCert.getOwner() == msg.sender) {
                 certificates[hashedInput] = newCert;
                 return true;
             }
@@ -27,41 +29,9 @@ contract EiMa {
     }
     
     function transferOwnership(Certificate cert, address newOwner) public returns (bool _allowed) {
-        if(msg.sender != cert.getOwner()) return false;
+        if (msg.sender != cert.getOwner()) 
+            return false;
         cert.transferOwnership(newOwner);
         return true;
-    }
-    
-    //function newCert(bytes32 certUrl) public returns (Certificate cert) { 
-    //    cert = Certificate({url:certUrl, owner:msg.sender, newest:true, exist:true, newer:0});
-    //}
-}
-
-contract Certificate {
-    address owner;
-    bytes32 urlHash;
-    //bytes32 certHash; //For later use.
-    Certificate prevCert;
-    
-    function Certificate(string url, address _owner, Certificate _prevCert) public payable {
-        owner = _owner;
-        urlHash = keccak256(url);
-        prevCert = _prevCert;
-    }
-    
-    function getCertHash() public view returns (bytes32 _urlHash) {
-        return urlHash;
-    }
-    
-    function getOwner() public view returns (address _owner) {
-        return owner;
-    }
-    
-    function getPrevCert() public view returns (Certificate _prevCert) {
-        return prevCert;
-    }
-    
-    function transferOwnership(address _newOwner) public {
-        owner = _newOwner;
     }
 }
