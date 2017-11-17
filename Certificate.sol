@@ -30,6 +30,7 @@ contract Certificate {
     }
     
     function transferOwnership(address _newOwner) public {
+        require (owner == msg.sender);
         owner = _newOwner;
     }
 }
