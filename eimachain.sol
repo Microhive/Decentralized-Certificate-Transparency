@@ -12,19 +12,20 @@ contract EiMaChain {
     }
 
     /// Add a new certificate to chain.
-    function addCertificate(string url) public returns (bool _allowed) {
+    function addCertificate(string url, string _certificate) public returns (bool _allowed) {
         bytes32 hashedInput = keccak256(url);
+        bytes32 certHash = keccak256(_certificate);
         uint256 index;
         Certificate oldCert = certificates[pointers[hashedInput]];
 
         if (pointers[hashedInput] == 0) {
-            index = certificates.push(new Certificate(url, msg.sender, certificates[0])) - 1;
+            index = certificates.push(new Certificate(url, certHash, msg.sender, certificates[0])) - 1;
             pointers[hashedInput] = index;
             return true;
         } else {
             if (oldCert.getOwner() == msg.sender) {
                 index = pointers[hashedInput];
-                certificates[index] = new Certificate(url, msg.sender, oldCert);
+                certificates[index] = new Certificate(url, certHash, msg.sender, oldCert);
                 return true;
             }
         }
