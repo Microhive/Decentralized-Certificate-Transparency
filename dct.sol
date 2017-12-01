@@ -50,13 +50,17 @@ contract DCT {
         return false;
     }
     
-    function upgradeContract(DCT _newAddress) public onlyOwner returns (datastore _dstore) {
+    function upgradeContract(DCT _newAddress) public onlyOwner returns (bool _allowed) {
         if(_newAddress.getVersion() > getVersion()) {
             dstore.transferOwnership(_newAddress);
             selfdestruct(_newAddress); // Transfer any remaining gas or ETH to the new contract before deletion.
-            return dstore;
+            return true;
         }
-        return datastore(0x0);
+        return false;
+    }
+    
+    function getDatastore() public view onlyOwner returns (datastore _dstore) {
+        return dstore;
     }
     
     function importDatastore(datastore _dstore) public onlyOwner returns (bool _success) {
