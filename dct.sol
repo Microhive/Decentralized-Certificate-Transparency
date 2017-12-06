@@ -18,8 +18,8 @@ contract DCT {
     }
 
     /// Add a new certificate to chain.
-    function addCertificate(string url, string _certificate) public returns (bool _allowed) {
-        bytes32 hashedInput = keccak256(url);
+    function add(string _url, string _certificate) public returns (bool) {
+        bytes32 hashedInput = keccak256(_toLower(_url));
         bytes32 certHash = sha256(_certificate);
         Certificate oldCert = dstore.get(hashedInput);
 
@@ -35,35 +35,49 @@ contract DCT {
         return false;
     }
     
-    function getCertificate(string url) public view returns (Certificate) {
-        bytes32 hashedInput = keccak256(url);
+    function get(string _url) public view returns (Certificate) {
+        bytes32 hashedInput = keccak256(_url);
         return dstore.get(hashedInput);
     }
     
-    function transferOwnership(address _newOwner, Certificate _certificate) public returns (bool _allowed) {
-        if (_certificate != address(0x0)) {
-            if(_certificate.getOwner() == msg.sender) {
-                dstore.set(new Certificate(_certificate.getUrlHash(), _certificate.getCertHash(), _newOwner, _certificate), _certificate.getUrlHash());
+    function check(string _url, string _certificate) public view returns (bool) {
+        Certificate cert = get(_toLower(_url));
+        if(address(cert) == address(0x0)) return false;
+        bytes32 hashedCert = sha256(_certificate);
+        while(address(cert) != address(0x0) && cert.getCertHash() != hashedCert)
+            cert = cert.getPrevCert();
+        return address(cert) != address(0x0) && cert.getCertHash() == hashedCert;
+    }
+    
+    function transferOwnership(address _newOwner, Certificate _cert) public returns (bool) {
+        if (_cert != address(0x0)) {
+            if(_cert.getOwner() == msg.sender) {
+                dstore.set(new Certificate(
+                    _cert.getUrlHash(),
+                    _cert.getCertHash(),
+                    _newOwner,
+                    _cert
+                ), _cert.getUrlHash());
                 return true;
             }
         }
         return false;
     }
     
-    function upgradeContract(DCT _newAddress) public onlyOwner returns (bool _allowed) {
+    function upgradeContract(DCT _newAddress) public onlyOwner returns (bool) {
         if(_newAddress.getVersion() > getVersion()) {
             dstore.transferOwnership(_newAddress);
-            selfdestruct(_newAddress); // Transfer any remaining gas or ETH to the new contract before deletion.
+            selfdestruct(_newAddress);
             return true;
         }
         return false;
     }
     
-    function getDatastore() public view onlyOwner returns (datastore _dstore) {
+    function getDatastore() public view onlyOwner returns (datastore) {
         return dstore;
     }
     
-    function importDatastore(datastore _dstore) public onlyOwner returns (bool _success) {
+    function importDatastore(datastore _dstore) public onlyOwner returns (bool) {
         if(dstore == address(0x0)) {
             dstore = _dstore;
             return true;
@@ -71,7 +85,7 @@ contract DCT {
         return false;
     }
     
-    function getVersion() public view returns (uint16 _output) {
+    function getVersion() public view returns (uint16) {
         return version;
     }
     
@@ -79,5 +93,22 @@ contract DCT {
     modifier onlyOwner {
         require(owner == msg.sender);
         _;
+    }
+    
+    // Changes a string from uppercase to lowercase.
+    // https://gist.github.com/thomasmaclean/276cb6e824e48b7ca4372b194ec05b97
+    function _toLower(string str) private pure returns (string)  {
+        bytes memory bStr = bytes(str);
+        bytes memory bLower = new bytes(bStr.length);
+        for (uint i = 0; i < bStr.length; i++) {
+            // Uppercase character...
+            if ((bStr[i] >= 65) && (bStr[i] <= 90)) {
+                // So we add 32 to make it lowercase
+                bLower[i] = bytes1(int(bStr[i]) + 32);
+            } else {
+                bLower[i] = bStr[i];
+            }
+        }
+        return string(bLower);
     }
 }
