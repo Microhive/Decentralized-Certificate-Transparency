@@ -14,7 +14,7 @@ contract DCT {
         else
             dstore = datastore(0x0);
         owner = msg.sender;
-        version = 1;
+        version = 2;
     }
 
     /// Add a new certificate to chain.
