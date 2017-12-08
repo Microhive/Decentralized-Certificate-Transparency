@@ -49,7 +49,8 @@ contract DCT {
         return address(cert) != address(0x0) && cert.getCertHash() == hashedCert;
     }
     
-    function transferOwnership(address _newOwner, Certificate _cert) public returns (bool) {
+    function transferOwnership(address _newOwner, string _url) public returns (bool) {
+        Certificate _cert = get(_url);
         if (_cert != address(0x0)) {
             if(_cert.getOwner() == msg.sender) {
                 dstore.set(new Certificate(
