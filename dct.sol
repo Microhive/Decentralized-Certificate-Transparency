@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.19;
 
 import "./certificate.sol";
 import "./datastore.sol";
@@ -14,7 +14,7 @@ contract DCT {
         else
             dstore = datastore(0x0);
         owner = msg.sender;
-        version = 2;
+        version = 3;
     }
 
     /// Add a new certificate to chain.
@@ -36,12 +36,11 @@ contract DCT {
     }
     
     function get(string _url) public view returns (Certificate) {
-        bytes32 hashedInput = keccak256(_url);
-        return dstore.get(hashedInput);
+        return dstore.get(keccak256(_toLower(_url)));
     }
     
     function check(string _url, string _certificate) public view returns (bool) {
-        Certificate cert = get(_toLower(_url));
+        Certificate cert = get(_url);
         if(address(cert) == address(0x0)) return false;
         bytes32 hashedCert = sha256(_certificate);
         while(address(cert) != address(0x0) && cert.getCertHash() != hashedCert)

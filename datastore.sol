@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.19;
 
 import "./certificate.sol";
 
@@ -14,7 +14,7 @@ contract datastore {
     
     // Should get be owner only, is there a reason for keeping it
     // open, is there a security reason to keep it closed?
-    function get(bytes32 _input) public view onlyOwner returns (Certificate _output) {
+    function get(bytes32 _input) public view onlyOwner returns (Certificate) {
         if(_input == 0) {
             return certificates[0];
         }

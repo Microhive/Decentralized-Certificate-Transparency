@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.19;
 
 contract Certificate {
     address owner;
@@ -13,19 +13,19 @@ contract Certificate {
         prevCert = _prevCert;
     }
     
-    function getOwner() public view returns (address _owner) {
+    function getOwner() public view returns (address) {
         return owner;
     }
     
-    function getUrlHash() public view returns (bytes32 _urlHash) {
+    function getUrlHash() public view returns (bytes32) {
         return urlHash;
     }
 
-    function getCertHash() public view returns (bytes32 _certHash) {
+    function getCertHash() public view returns (bytes32) {
         return certHash;
     }
 
-    function getPrevCert() public view returns (Certificate _prevCert) {
+    function getPrevCert() public view returns (Certificate) {
         return prevCert;
     }
 }
